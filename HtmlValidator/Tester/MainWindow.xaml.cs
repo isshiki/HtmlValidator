@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
 
 namespace HtmlValidator
@@ -9,9 +10,10 @@ namespace HtmlValidator
     public partial class MainWindow : Window
     {
         // TODO： 自分の環境に合わせて、以下のURLはカスタマイズしてください
-        private const string _urlTragetHtmlPage = "https://localhost/article.html";                                   // 記事のURL
-        private const string _pathErrorWebPage = @"C:\WebSites\" + HtmlValidation.HtmlValidator.ErrorWebPageHtml;     // エラー表示用HTMLファイルのパス（※このファイルは、下記のURLからWebブラウザーで開けること）
-        private const string _urlErrorWebPage = "https://localhost/" + HtmlValidation.HtmlValidator.ErrorWebPageHtml; // エラー表示用HTMLファイルのURL（※このファイルは、このURLからWebブラウザーで開けること）
+        private const string _urlHtmlSource = "https://localhost/" + HtmlValidation.HtmlValidator.SourceHtmlFile;      // 検証対象のHTMLソース（URL）
+        private const string _pathHtmlSource = @"C:\WebSites\" + HtmlValidation.HtmlValidator.SourceHtmlFile;          // 検証対象のHTMLソース（Path）
+        private const string _pathErrorWebPage = @"C:\WebSites\" + HtmlValidation.HtmlValidator.ErrorWebPageHtml;      // 「HTMLエラー情報ページ」ファイルのパス（※このファイルは、下記のURLからWebブラウザーで開けること）
+        private const string _urlErrorWebPage = "https://localhost/" + HtmlValidation.HtmlValidator.ErrorWebPageHtml;  // 「HTMLエラー情報ページ」ファイルのURL（※このファイルは、このURLからWebブラウザーで開けること）
 
         public MainWindow()
         {
@@ -27,14 +29,22 @@ namespace HtmlValidator
                 return;
             }
 
-            HtmlValidation.HtmlValidator val = new HtmlValidation.HtmlValidator(_urlTragetHtmlPage);
+            var val = new HtmlValidation.HtmlValidator(_urlHtmlSource, _pathHtmlSource);
             if (val.ValidationOfHtmlText(html, _pathErrorWebPage, _urlErrorWebPage))
             {
                 MessageBox.Show(this, "HTMLソースのタグ構造は正常です。");
             }
             else
             {
-                MessageBox.Show(this, "HTMLソースには「タグの書き損じ」や「タグ階層の破たん」が存在します。\n\nWebブラウザーが自動的に起動してエラー情報ページが表示されていますのでご確認ください。");
+                HtmlValidation.CmsUtility.Application.DoEvents();
+                HtmlValidation.CmsUtility.OpenByTextEditor(_pathHtmlSource);
+                HtmlValidation.CmsUtility.RunUrlorPath(_urlHtmlSource);
+                HtmlValidation.CmsUtility.RunUrlorPath(_urlErrorWebPage);
+
+                MessageBox.Show(this,
+                    "ご指定のHTMLソースには「タグの書き損じ」や「タグ階層の破たん」といった問題が存在します。\n\n" +
+                    "先ほど、「検証対象のHTMLソース」をデフォルトのテキストエディターとブラウザーで、\n" + 
+                    "「HTMLエラー情報ページ」をデフォルトのブラウザーで表示しましたのでご確認ください。");
             }
         }
     }

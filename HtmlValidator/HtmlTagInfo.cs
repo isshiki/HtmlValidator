@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace HtmlValidation
+﻿namespace HtmlValidation
 {
     public class HtmlTagInfo
     {
@@ -15,16 +9,19 @@ namespace HtmlValidation
         // タグ種別
         public HtmlTagType TagType { get; set; }
 
+        // タグ自体の内容
+        public string InsideContent { get; set; }
 
         private HtmlTagInfo()
         {
             // コンストラクターの使用方法を制限
         }
 
-        public HtmlTagInfo(string tagName, HtmlTagType tagType)
+        public HtmlTagInfo(string tagName, HtmlTagType tagType, string tagContent)
         {
             this.Name = tagName;
             this.TagType = tagType;
+            this.InsideContent = tagContent;
         }
 
         public static HtmlTagType GetHtmlTagType(string tagName, bool isOpening)

@@ -36,6 +36,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -57,6 +58,7 @@
     <Compile Include="HtmlTagInfo.cs" />
     <Compile Include="HtmlTagType.cs" />
     <Compile Include="HtmlValidator.cs" />
+    <Compile Include="Tester\CmsUtility.cs" />
     <Compile Include="UnkownHtmlTag.cs" />
     <Page Include="Tester\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

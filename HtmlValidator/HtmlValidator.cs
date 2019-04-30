@@ -9,18 +9,23 @@ namespace HtmlValidation
 {
     public class HtmlValidator
     {
+        private string URL { get; set; }  // 検証対象のHTMLソースのURL
+        private string Path { get; set; }  // 検証対象のHTMLソースのファイルパス
+
+        public const string SourceHtmlFile = "@html-source.html";
         public const string ErrorWebPageHtml = "@html-validation.html";
 
-        private string URL { get; set; }  // 記事のURL：https://localhost/article.html
+        private const string breakMark = "【BR】";
 
         private HtmlValidator()
         {
             // コンストラクターの使用方法を制限
         }
 
-        public HtmlValidator(string url)
+        public HtmlValidator(string url, string path)
         {
             this.URL = url;
+            this.Path = path;
         }
 
         // 「 」＝「\u0020;」＝通常のスペース（SP）＝HTMLではこれしか使えないので、以下は無視してよい
@@ -153,7 +158,7 @@ namespace HtmlValidation
         private static string EscapeTextForHtml(string htmlCode)
         {
             if (String.IsNullOrEmpty(htmlCode)) return String.Empty;
-            return htmlCode.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\n", "<br>");
+            return htmlCode.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\r\n", "\n").Replace("\n", "<br>");
         }
 
         private static bool IsNumber(char ch)
@@ -276,7 +281,7 @@ namespace HtmlValidation
         {
             sbErrorInfo.Append(
                 $"\r\n<p style=\"color: blue; font-weight: bold;\">" +
-                $"{currentLineNumber + 1}行{currentColumnNumber + 1}文字目： " +
+                $"{currentLineNumber}行{currentColumnNumber}文字目： " +
                 $"{EscapeTextForHtml(errorTitle)}<br>\r\n" +
                 $"　→ {EscapeTextForHtml(errorMessage)}</p>\r\n");
 
@@ -284,7 +289,7 @@ namespace HtmlValidation
             sbErrorInfo.Append("<p style=\"color: red;\">### ▼問題箇所のHTMLコード内容（文字表示・確認用）▼ ###</p>\r\n");
             sbErrorInfo.Append($"<!-------------------------------------------><p>\r\n");
 
-            sbErrorInfo.Append($"\r\n\r\n{EscapeTextForHtml(errorHtmlCode)}\r\n\r\n\r\n");
+            sbErrorInfo.Append($"\r\n\r\n{EscapeTextForHtml(errorHtmlCode.Replace(breakMark, "\n"))}\r\n\r\n\r\n");
             // タグの属性部で、"..." の中ではダブルクォーテーション(")を &quot;、'...' の中ではシングルクォーテーション(')を &#39; と記述する必要があるが、ここでは不要
 
             sbErrorInfo.Append("<!-------------------------------------------></p><hr>\r\n");
@@ -297,7 +302,7 @@ namespace HtmlValidation
             errorHtmlCode = Regex.Replace(errorHtmlCode, "</head([^>]*?)>", "</div><!-- class=\"元は「/head」タグ\"$1 -->", RegexOptions.IgnoreCase);
             errorHtmlCode = Regex.Replace(errorHtmlCode, "<body([^>]*?)>", "<div class=\"元は「body」タグ\"$1>", RegexOptions.IgnoreCase);
             errorHtmlCode = Regex.Replace(errorHtmlCode, "</body([^>]*?)>", "</div><!-- class=\"元は「/body」タグ\"$1 -->", RegexOptions.IgnoreCase);
-            sbErrorInfo.Append(errorHtmlCode);
+            sbErrorInfo.Append(errorHtmlCode.Replace(breakMark, "<br>\r\n"));
 
             sbErrorInfo.Append("\r\n\r\n\r\n");
         }
@@ -311,10 +316,13 @@ namespace HtmlValidation
             sbErrorInfo.Append("<html lang=\"ja\">\r\n");
             sbErrorInfo.Append("<head>\r\n");
             sbErrorInfo.Append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\r\n");
-            sbErrorInfo.Append("<title>HTMLタグ階層構造の基本的なチェック機能</title>\r\n");
+            sbErrorInfo.Append("<title>HTMLエラー情報ページ</title>\r\n");
             sbErrorInfo.Append("</head>\r\n");
             sbErrorInfo.Append("<body>\r\n");
-            sbErrorInfo.Append("\r\n<p style=\"color: red;\">【HTML構文エラー】<br>\r\n****** " + this.URL + " ******</p>\r\n");
+            sbErrorInfo.Append("\r\n<p style=\"color: red;\">【HTMLエラー情報ページ】 HTMLソースには「タグの書き損じ」や「タグ階層の破たん」といった問題が存在します。<br>\r\n" + 
+                "検証対象のHTMLソース（URL）： " + this.URL + "<br>\r\n" +
+                "検証対象のHTMLソース（ファイルパス）： " + this.Path + "<br>\r\n" +
+                "</p>\r\n");
             sbErrorInfo.Append("\r\n<!-------------------------------------------><hr>\r\n");
 
             var htmlCode = input.Replace("\r\n", "\n").Replace("\r", "\n"); // 改行コードをLFに統一して改行検出を楽にする
@@ -322,8 +330,8 @@ namespace HtmlValidation
             var tagHierarchy = new Stack<HtmlTagInfo>();        // タグの階層を管理するためのスタック
             var listUnknownTag = new List<UnkownHtmlTag>();     // 未知のタグを保存しておくリスト（分析後に警告）
 
-            var currentLineNumber = 0;          // 現在の行番号（扱いやすいように0スタート）
-            var currentColumnNumber = 0;        // 現在の行番号（扱いやすいように0スタート）
+            var currentLineNumber = 1;          // 現在の行番号（扱いやすいように、実際に合わせて「1」スタート）
+            var currentColumnNumber = 1;        // 現在の行番号（扱いやすいように、実際に合わせて「1」スタート）
             var indexFirstOfCurLine = 0;        // 改行位置のインデックス
             var length = htmlCode.Length;       // HTMLコードの長さ、つまり最終インデックス
 
@@ -331,6 +339,7 @@ namespace HtmlValidation
 
             var isInsideTag = false;            // タグの中か
             var curTagName = String.Empty;      // 現在のタグ名（開始タグで設定、終了タグで解除）
+            var tempTagContent = String.Empty;  // 一時的に取得するタグコンテンツ（ある程度の正確性で良しとする）
 
             var isTagAttrName = false;          // タグの属性名か
             var isTagAttrAssign = false;        // タグの属性の割り当て「=」の後か
@@ -492,7 +501,8 @@ namespace HtmlValidation
                                     {
                                         // 後続の文字が「>」になったら、タグ語を完成させる
                                         curTagName = htmlCode.Substring(i + 1, n - i - 1);
-                                        retValue = CheckTagHierarchy(true, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                                        tempTagContent = htmlCode.Substring(i, n - i + 1);
+                                        retValue = CheckTagHierarchy(true, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
                                         //break; // 属性「値」処理のループを抜ける
                                         i = n;                     // 処理を最後の文字「>」まで進める
                                         curChar = nextChar;        // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
@@ -504,7 +514,24 @@ namespace HtmlValidation
                                     {
                                         // 後続の文字が終了文字のいずれかになったら、タグ語を完成させる
                                         curTagName = htmlCode.Substring(i + 1, n - i - 1);
-                                        retValue = CheckTagHierarchy(true, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                                        indexTemp = htmlCode.IndexOf(">", i + 1);
+                                        if (indexTemp == -1)
+                                        {
+                                            tempTagContent = htmlCode.Substring(i);
+                                        }
+                                        else
+                                        {
+                                            tempTagContent = htmlCode.Substring(i, indexTemp - i + 1);
+                                        }
+                                        var trimedClosingToken = tempTagContent.TrimEnd(new char[] { '>', ' ' });
+                                        if (trimedClosingToken[trimedClosingToken.Length - 1] == '/')
+                                        {
+                                            retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
+                                        }
+                                        else
+                                        {
+                                            retValue = CheckTagHierarchy(true, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
+                                        }
                                         //i = n;                   // エラー時は、タグ名から取得したいので、開始インデックスは進めない
                                         curChar = nextChar;        // 現在の文字を念のため再設定
 
@@ -701,7 +728,7 @@ namespace HtmlValidation
                                             {
                                                 // シングル閉じタグ（例：<img />）
                                                 // 階層処理はせずに無視する（HTML5ではなくXHTMLのような書き方だが無視する）
-                                                //retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                                                //retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
 
                                                 // タグを確定させるループ
                                                 for (n = n + 1; n < length; n++)
@@ -781,7 +808,8 @@ namespace HtmlValidation
                                             {
                                                 // 後続の文字が「>」になったら、タグ語を完成させる
                                                 curTagName = htmlCode.Substring(i + 1, n - i - 2).Trim();
-                                                retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                                                tempTagContent = htmlCode.Substring(i, n - i + 1);
+                                                retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
                                                 i = n;                     // 処理を最後の文字「>」まで進める
                                                 curChar = nextChar;        // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
                                                 isInsideTag = false;       // タグ終了
@@ -866,7 +894,7 @@ namespace HtmlValidation
                     {
                         case '\n':
                             currentLineNumber++;         // 行番号を＋１する
-                            currentColumnNumber = 0;     // 列番号をリセット
+                            currentColumnNumber = 1;     // 列番号をリセット
                             indexFirstOfCurLine = i + 1; // 改行されたら、現在行の1文字目のインデックスを保存しておく
                             break;
                         default:
@@ -890,24 +918,24 @@ namespace HtmlValidation
                     {
                         case HtmlTagType.UnknownOpening:
                             // 未知のタグなのであえてスルーする
-                            //errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 <br>\r\n");
+                            //errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}\r\n");
                             break;
                         case HtmlTagType.UnknownClosing:
-                            errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜/{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 <br>\r\n");
+                            errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜/{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}\r\n");
                             break;
                         case HtmlTagType.SingleOpening:
                             Debug.Assert(false, "ここに来ることは考えられない");
-                            errorHtmlCode.Append($"　・ 単体利用： ＜{tagInfo.Name}＞タグ <br>\r\n");
+                            errorHtmlCode.Append($"　・ 単体利用： ＜{tagInfo.Name}＞タグ {breakMark}\r\n");
                             break;
                         case HtmlTagType.SingleClosing:
                             Debug.Assert(false, "ここに来ることは考えられない");
-                            errorHtmlCode.Append($"　・ 単体利用： ＜/{tagInfo.Name}＞終了タグ（※文法違反です） <br>\r\n");
+                            errorHtmlCode.Append($"　・ 単体利用： ＜/{tagInfo.Name}＞終了タグ（※文法違反です） {breakMark}\r\n");
                             break;
                         case HtmlTagType.SetOpening:
-                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 <br>\r\n");
+                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}\r\n");
                             break;
                         case HtmlTagType.SetClosing:
-                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 <br>\r\n");
+                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}\r\n");
                             break;
                     }
                     if (tagHierarchy.Count <= 0) break;
@@ -928,11 +956,11 @@ namespace HtmlValidation
             {
                 // タグ階層が完璧か
                 var errorHtmlCode = new StringBuilder();
-                errorHtmlCode.Append($"以下のタグは、未知のタグでした。念のため間違いがないかご確認ください： <br>\r\n");
-                errorHtmlCode.Append($"未知のタグは、単体利用かセット利用か不明なので、開始タグに対する終了タグをチェックしません。ご自分でチェックしてください： <br>\r\n");
+                errorHtmlCode.Append($"以下のタグは、未知のタグでした。念のため間違いがないかご確認ください： {breakMark}\r\n");
+                errorHtmlCode.Append($"未知のタグは、単体利用かセット利用か不明なので、開始タグに対する終了タグをチェックしません。ご自分でチェックしてください： {breakMark}\r\n");
                 foreach (var tagInfo in listUnknownTag)
                 {
-                    errorHtmlCode.Append($"　・{tagInfo.LineNumber}行{tagInfo.ColumnNumber}文字目： ＜{(tagInfo.IsOpening ? "" : "/")}{tagInfo.Name}＞{(tagInfo.IsOpening ? "開始" : "終了")}タグ <br>\r\n");
+                    errorHtmlCode.Append($"　・{tagInfo.LineNumber}行{tagInfo.ColumnNumber}文字目： ＜{(tagInfo.IsOpening ? "" : "/")}{tagInfo.Name}＞{(tagInfo.IsOpening ? "開始" : "終了")}タグ {breakMark}");
                 }
                 AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
                     $"未知のタグが存在します。このHTMLでは適切に解析できない可能性があります。",
@@ -949,13 +977,11 @@ namespace HtmlValidation
                 try
                 {
                     File.WriteAllText(errorsFilePath, sbErrorInfo.ToString(), Encoding.UTF8);
-
-                    //Application.DoEvents();
-
-                    Process.Start(errorsFileUrl);
+                    File.WriteAllText(this.Path, input, Encoding.UTF8);
                 }
                 catch (Exception)
                 {
+                    // 基本的にエラーはおきないはずなので、とりあえず無視する
                 }
             }
 
@@ -969,8 +995,11 @@ namespace HtmlValidation
         {
             var retValue = true;
 
-            isInsideTag = true;             // タグの中か
-            curTagName = String.Empty;      // 現在のタグ名（開始タグで設定、終了タグで解除）
+            var indexTemp = 0;                  // 処理用の一時インデックス
+
+            isInsideTag = true;                 // タグの中か
+            curTagName = String.Empty;          // 現在のタグ名（開始タグで設定、終了タグで解除）
+            var tempTagContent = String.Empty;  // 一時的に取得するタグコンテンツ（ある程度の正確性で良しとする）
 
             // 終了タグには属性設定はないが、内容を無視して許容する（※よって属性情報はいっさい呼び出し元に返さずにここで消費するのみ）
             var isTagAttrName = false;          // タグの属性名か
@@ -1035,7 +1064,8 @@ namespace HtmlValidation
                         {
                             // 後続の文字が「>」になったら、タグ語を完成させる
                             curTagName = htmlCode.Substring(i + 2, n - i - 2);
-                            retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                            tempTagContent = htmlCode.Substring(i, n - i + 1);
+                            retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
                             //break; // 属性「値」処理のループを抜ける
                             i = n;                     // 処理を最後の文字「>」まで進める
                             curChar = nextChar;        // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
@@ -1047,7 +1077,16 @@ namespace HtmlValidation
                         {
                             // 後続の文字が終了文字のいずれかになったら、タグ語を完成させる
                             curTagName = htmlCode.Substring(i + 2, n - i - 2);
-                            retValue = CheckTagHierarchy(true, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, i, n, sbErrorInfo);
+                            indexTemp = htmlCode.IndexOf(">", i + 1);
+                            if (indexTemp == -1)
+                            {
+                                tempTagContent = htmlCode.Substring(i);
+                            }
+                            else
+                            {
+                                tempTagContent = htmlCode.Substring(i, indexTemp - i + 1);
+                            }
+                            retValue = CheckTagHierarchy(false, htmlCode, tagHierarchy, listUnknownTag, currentLineNumber, currentColumnNumber, curTagName, tempTagContent, i, n, sbErrorInfo);
                             //i = n;                   // エラー時は、タグ名から取得したいので、開始インデックスは進めない
                             curChar = nextChar;        // 現在の文字を念のため再設定
 
@@ -1300,7 +1339,7 @@ namespace HtmlValidation
             return retValue;
         }
 
-        private static bool CheckTagHierarchy(bool isOpeningTag, string htmlCode, Stack<HtmlTagInfo> tagHierarchy, List<UnkownHtmlTag> listUnknownTag, int currentLineNumber, int currentColumnNumber, string curTagName, int i, int n, StringBuilder sbErrorInfo)
+        private static bool CheckTagHierarchy(bool isOpeningTag, string htmlCode, Stack<HtmlTagInfo> tagHierarchy, List<UnkownHtmlTag> listUnknownTag, int currentLineNumber, int currentColumnNumber, string curTagName, string curTagContent, int i, int n, StringBuilder sbErrorInfo)
         {
             var retValue = true;
 
@@ -1315,7 +1354,7 @@ namespace HtmlValidation
                         listUnknownTag.Add(new UnkownHtmlTag(curTagName, isOpeningTag, currentLineNumber, currentColumnNumber));
 
                         // タグ階層に追加する
-                        tagHierarchy.Push(new HtmlTagInfo(curTagName, curTagType));
+                        tagHierarchy.Push(new HtmlTagInfo(curTagName, curTagType, curTagContent));
 
                     }
                     else
@@ -1332,11 +1371,13 @@ namespace HtmlValidation
                     }
                     else
                     {
-                        // 未知の終了タグ名は未知リストに追加する
+                        // 別の未知の終了タグ名は未知リストに追加する
                         listUnknownTag.Add(new UnkownHtmlTag(curTagName, isOpeningTag, currentLineNumber, currentColumnNumber));
 
                         // タグ階層から1つ前のタグを取得して削除する
-                        if ((tagHierarchy.Count > 0) && (tagHierarchy.Pop().Name == curTagName))
+                        var existsHierarchy = (tagHierarchy.Count > 0);
+                        var prevTag = existsHierarchy ? tagHierarchy.Pop() : null;
+                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name == curTagName))
                         {
                             // 未知なタグが、正常に開始タグと終了タグのセットになっているなら、何もなかったように振る舞う
 
@@ -1344,15 +1385,57 @@ namespace HtmlValidation
                         else
                         {
                             // 未知な終了タグが現れたエラー
-                            var errorHtmlCode = htmlCode.Substring(i, n - i); // TODO: チェック
-                            AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
-                                $"未知の終了タグ名「{curTagName}」が単独で使われています（＝適切なタグ階層に、終了タグに対応する「開始タグ」が存在しないようです）。",
-                                "正しく開始タグ名を記載してください。",
-                                errorHtmlCode);
+                            //var prevTypeNamea = GetPrevTypeName(prevTag);
+                            //var errorHtmlCodea = htmlCode.Substring(i, n - i);
+                            //AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
+                            //    $"{prevTypeName}開始タグ<{prevTag.InsideContent}＞に対応する未知の終了タグ</{prevTag.Name}>があるべき場所に、" +
+                            //    $"未知の終了タグ</{curTagName}>が存在し、タグ階層が破たんしています。" +
+                            //    $"（＝適切なタグ階層に、終了タグに対応する「開始タグ」が存在しないようです）。",
+                            //    "正しく開始タグと終了タグを記載してください。",
+                            //    errorHtmlCode);
+                            //retValue = false;
+                            //break; // タグ判定のswitch-caseを抜ける
+
+
+                            // 別の終了タグが現れたエラー
+                            var trimedClosingToken = curTagContent.TrimEnd(new char[] { '>', ' ' });
+                            if (trimedClosingToken[trimedClosingToken.Length - 1] == '/')
+                            {
+                                AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
+                                    $"未知のタグ <{curTagName}> が単独で使われています。\n" +
+                                    "（＝例えば、「<unknown/>」のようにして、XHTMLの単独タグのように使われています。）",
+                                    "正しく開始タグと終了タグを記載してください。\n" +
+                                    $"単体で利用するタグの場合は、<{curTagName}> のように「/」で閉じずに使ってください。",
+                                    curTagContent);
+                            }
+                            else if (prevTag == null)
+                            {
+                                var prevTypeName = GetPrevTypeName(prevTag);
+                                var errorHtmlCode = htmlCode.Substring(0, n + 1);
+                                AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
+                                    $"未知の「終了タグ </{curTagName}> 」に対応する\n" +
+                                    $"　「開始タグ <{curTagName}> 」が存在しません。タグ階層が破たんしています。\n" +
+                                    "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
+                                    "正しく開始タグと終了タグを記載してください。",
+                                    errorHtmlCode);
+                            }
+                            else
+                            {
+                                var prevTypeName = GetPrevTypeName(prevTag);
+                                var errorHtmlCode = htmlCode.Substring(0, n + 1);
+                                AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
+                                    $"{prevTypeName}、「開始タグ {prevTag.InsideContent} 」に対応する\n" +
+                                    $"　「終了タグ </{prevTag.Name}> 」があるべき場所に、\n" +
+                                    $"　「終了タグ </{curTagName}> 」が存在し、タグ階層が破たんしています。\n" +
+                                    "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
+                                    "正しく開始タグと終了タグを記載してください。",
+                                    errorHtmlCode);
+                            }
                             retValue = false;
                             break; // タグ判定のswitch-caseを抜ける
 
                         }
+
                     }
                     break;
 
@@ -1377,9 +1460,7 @@ namespace HtmlValidation
                     }
                     else
                     {
-                        // シングルの終了タグ名は未知リストに追加する（違反、そんなタグは存在しないため）
-                        listUnknownTag.Add(new UnkownHtmlTag(curTagName, isOpeningTag, currentLineNumber, currentColumnNumber));
-                        // 警告はするけど致命的ではないので、何もなかったように振る舞う
+                        // <br /> のようにXHTMLのような書き方だが、許容し、何もなかったように振る舞う
 
                     }
                     break;
@@ -1388,7 +1469,7 @@ namespace HtmlValidation
                     if (isOpeningTag)
                     {
                         // タグ階層に追加する
-                        tagHierarchy.Push(new HtmlTagInfo(curTagName, curTagType));
+                        tagHierarchy.Push(new HtmlTagInfo(curTagName, curTagType, curTagContent));
 
                     }
                     else
@@ -1408,27 +1489,44 @@ namespace HtmlValidation
                     {
 
                         // タグ階層から1つ前のタグを取得して削除する
-                        if ((tagHierarchy.Count > 0) && (tagHierarchy.Pop().Name == curTagName))
+                        var existsHierarchy = (tagHierarchy.Count > 0);
+                        var prevTag = existsHierarchy ? tagHierarchy.Pop() : null;
+                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name == curTagName))
                         {
-                            // 未知なタグが、正常に開始タグと終了タグのセットになっているなら、何もなかったように振る舞う
+                            // セットのタグが、正常に開始タグと終了タグのセットになっているなら、何もなかったように振る舞う
 
                         }
                         else
                         {
-                            // 未知な終了タグが現れたエラー
-                            var errorHtmlCode = htmlCode.Substring(i, n - i);
-                            if (errorHtmlCode.EndsWith("/"))
+                            // 別の終了タグが現れたエラー
+                            var trimedClosingToken = curTagContent.TrimEnd(new char[] { '>', ' ' });
+                            if (trimedClosingToken[trimedClosingToken.Length - 1] == '/')
                             {
                                 AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
-                                    $"「開始タグ」と「終了タグ」をセットするブロックタグ名「{curTagName}」が単独で使われています。" +
+                                    $"「開始タグ」と「終了タグ」をセットで利用するタグ <{curTagName}> が単独で使われています。\n" +
                                     "（＝例えば、「<div/>」のようにして、XHTMLの単独タグのように使われています。）",
+                                    "正しく開始タグと終了タグを記載してください。",
+                                    curTagContent);
+                            }
+                            else if (prevTag == null)
+                            {
+                                var prevTypeName = GetPrevTypeName(prevTag);
+                                var errorHtmlCode = htmlCode.Substring(0, n + 1);
+                                AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
+                                    $"セット利用の「終了タグ </{curTagName}> 」に対応する\n" +
+                                    $"　「開始タグ <{curTagName}> 」が存在しません。タグ階層が破たんしています。\n" +
+                                    "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
                                     "正しく開始タグと終了タグを記載してください。",
                                     errorHtmlCode);
                             }
                             else
                             {
+                                var prevTypeName = GetPrevTypeName(prevTag);
+                                var errorHtmlCode = htmlCode.Substring(0, n + 1);
                                 AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
-                                    $"未知の終了タグ名「{curTagName}」が単独で使われています。" +
+                                    $"{prevTypeName}、「開始タグ {prevTag.InsideContent} 」に対応する\n" +
+                                    $"　「終了タグ </{prevTag.Name}> 」があるべき場所に、\n" +
+                                    $"　「終了タグ </{curTagName}> 」が存在し、タグ階層が破たんしています。\n" +
                                     "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
                                     "正しく開始タグと終了タグを記載してください。",
                                     errorHtmlCode);
@@ -1443,6 +1541,30 @@ namespace HtmlValidation
             }
 
             return retValue;
+        }
+
+        public static string GetPrevTypeName(HtmlTagInfo prevTag)
+        {
+            if (prevTag == null) return "＜前階層のタグはありません＞";
+            var prevTypeName = String.Empty;
+            switch (prevTag.TagType)
+            {
+                case HtmlTagType.UnknownOpening: // 未知の開始タグ
+                case HtmlTagType.UnknownClosing: // 未知の終了タグ
+                    prevTypeName = "未知の";
+                    break;
+
+                case HtmlTagType.SingleOpening:  // 単体の開始タグ
+                case HtmlTagType.SingleClosing:  // 単体の終了タグ（違反）
+                    prevTypeName = "単体利用の";
+                    break;
+
+                case HtmlTagType.SetOpening:     // 開始タグと終了タグのセットにおける、開始タグ
+                case HtmlTagType.SetClosing:      // 開始タグと終了タグのセットにおける、終了タグ
+                    prevTypeName = "セット利用の";
+                    break;
+            }
+            return prevTypeName;
         }
 
         private static void ParseAttributeValue(ref bool retValue, StringBuilder sbErrorInfo, string htmlCode, char targetChar, int currentLineNumber, int currentColumnNumber, int length, string curTagName, out bool isTagAttrAssign, out bool isTagAttrValue, ref string curAttrName, int i, ref char curChar, ref char nextChar, ref int n)
