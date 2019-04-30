@@ -1,0 +1,14 @@
+﻿<Window x:Class="HtmlValidator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HtmlValidator"
+        mc:Ignorable="d"
+        Title="HtmlValidatorTester" Height="450" Width="800">
+    <Grid>
+        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="以下にHTMLソースをコピペしてください：" VerticalAlignment="Top"/>
+        <TextBox x:Name="textboxHtmlSource" Margin="10,31,10,58" TextWrapping="NoWrap" Text="" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" AcceptsReturn="True"/>
+        <Button x:Name="buttonValidate" Content="HTMLを検証する" Margin="10,0,10,10" VerticalAlignment="Bottom" Height="43" FontSize="16" Click="ButtonValidate_Click"/>
+    </Grid>
+</Window>

@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HtmlValidator", "HtmlValidator\HtmlValidator.csproj", "{59BABFAF-F323-4955-AB0C-1F0D3C5AFEEE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{25F7DD5C-38E4-4FF2-8DFD-1E6C949A01A2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{59BABFAF-F323-4955-AB0C-1F0D3C5AFEEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59BABFAF-F323-4955-AB0C-1F0D3C5AFEEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59BABFAF-F323-4955-AB0C-1F0D3C5AFEEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59BABFAF-F323-4955-AB0C-1F0D3C5AFEEE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4388B8FB-F08B-48EF-8456-80380067DB57}
+	EndGlobalSection
+EndGlobal
