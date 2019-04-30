@@ -8,9 +8,10 @@ namespace HtmlValidator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string _urlTragetHtmlPage = "https://localhost/article.html"; // 記事のURL
-        private const string _pathErrorWebPage = @"C:\WebSites\test.html";         // エラー表示用HTMLファイルのパス（※このファイルは、下記のURLからWebブラウザーで開けること）
-        private const string _urlErrorWebPage = "https://localhost/test.html";    // エラー表示用HTMLファイルのURL（※このファイルは、このURLからWebブラウザーで開けること）
+        // TODO： 自分の環境に合わせて、以下のURLはカスタマイズしてください
+        private const string _urlTragetHtmlPage = "https://localhost/article.html";                                   // 記事のURL
+        private const string _pathErrorWebPage = @"C:\WebSites\" + HtmlValidation.HtmlValidator.ErrorWebPageHtml;     // エラー表示用HTMLファイルのパス（※このファイルは、下記のURLからWebブラウザーで開けること）
+        private const string _urlErrorWebPage = "https://localhost/" + HtmlValidation.HtmlValidator.ErrorWebPageHtml; // エラー表示用HTMLファイルのURL（※このファイルは、このURLからWebブラウザーで開けること）
 
         public MainWindow()
         {

@@ -9,6 +9,8 @@ namespace HtmlValidation
 {
     public class HtmlValidator
     {
+        public const string ErrorWebPageHtml = "@html-validation.html";
+
         private string URL { get; set; }  // 記事のURL：https://localhost/article.html
 
         private HtmlValidator()
