@@ -1377,7 +1377,7 @@ namespace HtmlValidation
                         // タグ階層から1つ前のタグを取得して削除する
                         var existsHierarchy = (tagHierarchy.Count > 0);
                         var prevTag = existsHierarchy ? tagHierarchy.Pop() : null;
-                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name == curTagName))
+                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name.Equals(curTagName, StringComparison.OrdinalIgnoreCase)))
                         {
                             // 未知なタグが、正常に開始タグと終了タグのセットになっているなら、何もなかったように振る舞う
 
@@ -1495,7 +1495,7 @@ namespace HtmlValidation
                         // タグ階層から1つ前のタグを取得して削除する
                         var existsHierarchy = (tagHierarchy.Count > 0);
                         var prevTag = existsHierarchy ? tagHierarchy.Pop() : null;
-                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name == curTagName))
+                        if ((existsHierarchy) && (prevTag != null) && (prevTag.Name.Equals(curTagName, StringComparison.OrdinalIgnoreCase)))
                         {
                             // セットのタグが、正常に開始タグと終了タグのセットになっているなら、何もなかったように振る舞う
 

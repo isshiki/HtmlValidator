@@ -26,7 +26,7 @@
 
         public static HtmlTagType GetHtmlTagType(string tagName, bool isOpening)
         {
-            switch (tagName)
+            switch (tagName.ToLower())
             {
                 case "area":
                 case "base":
