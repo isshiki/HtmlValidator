@@ -1428,7 +1428,11 @@ namespace HtmlValidation
                                     $"　「終了タグ </{prevTag.Name}> 」があるべき場所に、\n" +
                                     $"　「終了タグ </{curTagName}> 」が存在し、タグ階層が破たんしています。\n" +
                                     "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
-                                    "正しく開始タグと終了タグを記載してください。",
+                                    "正しく開始タグと終了タグを記載してください。\n" +
+                                    $"「開始タグ {prevTag.InsideContent} 」～「終了タグ </{curTagName}> 」の間に、\n" +
+                                    $"　不要な「開始タグ <{prevTag.Name}> 」か「開始タグ <{curTagName}> 」が存在する、\n" +
+                                    $"　不要な「終了タグ </{prevTag.Name}> 」か「終了タグ </{curTagName}> 」が存在する、\n" +
+                                    "可能性が高いです。まずはそれを中心に問題箇所を探してください。",
                                     errorHtmlCode);
                             }
                             retValue = false;
@@ -1528,7 +1532,11 @@ namespace HtmlValidation
                                     $"　「終了タグ </{prevTag.Name}> 」があるべき場所に、\n" +
                                     $"　「終了タグ </{curTagName}> 」が存在し、タグ階層が破たんしています。\n" +
                                     "（＝適切なタグ階層に、「開始タグ」と「終了タグ」が存在しないようです。）",
-                                    "正しく開始タグと終了タグを記載してください。",
+                                    "正しく開始タグと終了タグを記載してください。\n" +
+                                    $"「開始タグ {prevTag.InsideContent} 」～「終了タグ </{curTagName}> 」の間に、\n" +
+                                    $"　不要な「開始タグ <{prevTag.Name}> 」か「開始タグ <{curTagName}> 」が存在する、\n" +
+                                    $"　不要な「終了タグ </{prevTag.Name}> 」か「終了タグ </{curTagName}> 」が存在する、\n" +
+                                    "可能性が高いです。まずはそれを中心に問題箇所を探してください。",
                                     errorHtmlCode);
                             }
                             retValue = false;
