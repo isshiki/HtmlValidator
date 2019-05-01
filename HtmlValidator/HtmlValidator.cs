@@ -910,7 +910,8 @@ namespace HtmlValidation
             {
                 // タグ階層が完璧か
                 var errorHtmlCode = new StringBuilder();
-                errorHtmlCode.Append($"以下のタグに対応するタグが見つかりませんでした： <br>\r\n"); // 31文字
+                errorHtmlCode.Append($"以下のタグに対応するタグが見つかりませんでした： {breakMark}");
+                var initLength = errorHtmlCode.Length;
                 while (true)
                 {
                     var tagInfo = tagHierarchy.Pop();
@@ -918,30 +919,30 @@ namespace HtmlValidation
                     {
                         case HtmlTagType.UnknownOpening:
                             // 未知のタグなのであえてスルーする
-                            //errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}\r\n");
+                            //errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}");
                             break;
                         case HtmlTagType.UnknownClosing:
-                            errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜/{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}\r\n");
+                            errorHtmlCode.Append($"　・ 未知のタグなので単体利用かセット利用か不明： ＜/{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}");
                             break;
                         case HtmlTagType.SingleOpening:
                             Debug.Assert(false, "ここに来ることは考えられない");
-                            errorHtmlCode.Append($"　・ 単体利用： ＜{tagInfo.Name}＞タグ {breakMark}\r\n");
+                            errorHtmlCode.Append($"　・ 単体利用： ＜{tagInfo.Name}＞タグ {breakMark}");
                             break;
                         case HtmlTagType.SingleClosing:
                             Debug.Assert(false, "ここに来ることは考えられない");
-                            errorHtmlCode.Append($"　・ 単体利用： ＜/{tagInfo.Name}＞終了タグ（※文法違反です） {breakMark}\r\n");
+                            errorHtmlCode.Append($"　・ 単体利用： ＜/{tagInfo.Name}＞終了タグ（※文法違反です） {breakMark}");
                             break;
                         case HtmlTagType.SetOpening:
-                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}\r\n");
+                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞開始タグに対応する「＜/{tagInfo.Name}＞終了タグ」 {breakMark}");
                             break;
                         case HtmlTagType.SetClosing:
-                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}\r\n");
+                            errorHtmlCode.Append($"　・ セット利用： ＜{tagInfo.Name}＞終了タグに対応する「＜{tagInfo.Name}＞開始タグ」 {breakMark}");
                             break;
                     }
                     if (tagHierarchy.Count <= 0) break;
                 }
 
-                if (errorHtmlCode.Length > 31)
+                if (errorHtmlCode.Length > initLength)
                 {
                     AddToErrorInfo(sbErrorInfo, currentLineNumber, currentColumnNumber,
                         $"タグ階層が崩れています。開始タグと終了タグがマッチしていません。",
@@ -956,8 +957,8 @@ namespace HtmlValidation
             {
                 // タグ階層が完璧か
                 var errorHtmlCode = new StringBuilder();
-                errorHtmlCode.Append($"以下のタグは、未知のタグでした。念のため間違いがないかご確認ください： {breakMark}\r\n");
-                errorHtmlCode.Append($"未知のタグは、単体利用かセット利用か不明なので、開始タグに対する終了タグをチェックしません。ご自分でチェックしてください： {breakMark}\r\n");
+                errorHtmlCode.Append($"以下のタグは、未知のタグでした。念のため間違いがないかご確認ください： {breakMark}");
+                errorHtmlCode.Append($"未知のタグは、単体利用かセット利用か不明なので、開始タグに対する終了タグをチェックしません。ご自分でチェックしてください： {breakMark}");
                 foreach (var tagInfo in listUnknownTag)
                 {
                     errorHtmlCode.Append($"　・{tagInfo.LineNumber}行{tagInfo.ColumnNumber}文字目： ＜{(tagInfo.IsOpening ? "" : "/")}{tagInfo.Name}＞{(tagInfo.IsOpening ? "開始" : "終了")}タグ {breakMark}");
