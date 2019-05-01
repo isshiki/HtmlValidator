@@ -1433,7 +1433,8 @@ namespace HtmlValidation
                                     $"「開始タグ {prevTag.InsideContent} 」～「終了タグ </{curTagName}> 」の間に、\n" +
                                     $"　不要な「開始タグ <{prevTag.Name}> 」か「開始タグ <{curTagName}> 」が存在する、\n" +
                                     $"　不要な「終了タグ </{prevTag.Name}> 」か「終了タグ </{curTagName}> 」が存在する、\n" +
-                                    "可能性が高いです。まずはそれを中心に問題箇所を探してください。",
+                                    $"　必要な「終了タグ </{prevTag.Name}> 」を書き忘れている、\n" +
+                                    "といった可能性が高いです。まずはこれらを中心に問題箇所を探してください。",
                                     errorHtmlCode);
                             }
                             retValue = false;
@@ -1537,7 +1538,8 @@ namespace HtmlValidation
                                     $"「開始タグ {prevTag.InsideContent} 」～「終了タグ </{curTagName}> 」の間に、\n" +
                                     $"　不要な「開始タグ <{prevTag.Name}> 」か「開始タグ <{curTagName}> 」が存在する、\n" +
                                     $"　不要な「終了タグ </{prevTag.Name}> 」か「終了タグ </{curTagName}> 」が存在する、\n" +
-                                    "可能性が高いです。まずはそれを中心に問題箇所を探してください。",
+                                    $"　必要な「終了タグ </{prevTag.Name}> 」を書き忘れている、\n" +
+                                    "といった可能性が高いです。まずはこれらを中心に問題箇所を探してください。",
                                     errorHtmlCode);
                             }
                             retValue = false;
