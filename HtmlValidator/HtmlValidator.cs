@@ -543,6 +543,7 @@ namespace HtmlValidation
                                         i = n;                     // 処理を最後の文字「>」まで進める
                                         curChar = nextChar;        // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
                                         isInsideTag = false;       // タグ終了
+                                        // 開始タグなので「curTagName」にタグ名を保存したまま
                                         break; // タグ処理のループを抜ける
 
                                     }
@@ -589,6 +590,7 @@ namespace HtmlValidation
                                                 i = n;                     // 処理を最後の文字「>」まで進める
                                                 curChar = nextChar;        // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
                                                 isInsideTag = false;       // タグ終了
+                                                // 開始タグもしくは単体タグなので「curTagName」にタグ名を保存したまま
                                                 break; // タグの属性（Attribute）部分処理のループを抜ける
 
                                             }
@@ -890,10 +892,11 @@ namespace HtmlValidation
                             }
                             else if (IsCompletionLetterOfTag(nextChar))
                             {
-                                // ブロックの終了タグ（別メソッド化した。複雑さを少しでお軽減するため）
+                                // セット利用の終了タグ（別メソッド化した。複雑さを少しでお軽減するため）
                                 retValue = CheckClosingTag(htmlCode, tagHierarchy, listUnknownTag,
                                     currentLineNumber, currentColumnNumber, length, indexTemp,
                                     ref curChar, ref i, ref isInsideTag, ref curTagName, sbErrorInfo);
+                                curTagName = String.Empty;  // 終了タグなので「curTagName」のタグ名を消去する
                                 break; // タグ開始のswitch-caseを抜ける
                             }
                             else
