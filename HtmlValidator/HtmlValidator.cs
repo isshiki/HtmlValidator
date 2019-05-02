@@ -356,6 +356,42 @@ namespace HtmlValidation
                 {
                     // タグ開始のswitch-case
                     case '<':
+                        var modeSkip = false;
+                        switch (curTagName)
+                        {
+                            case "script":          // <script>タグ内か（内部では「<」を処理しないため）
+                            case "style":           // <style>タグ内か（内部では「<」を処理しないため）
+                                modeSkip = true;    // これらのタグ内は基本的にスキップする
+
+                                var tempNextChar = curChar;
+                                // タグ処理のループ
+                                for (int n = i + 1; n < length; n++)
+                                {
+                                    // その次のインデックスにある文字を取得
+                                    tempNextChar = htmlCode[n];
+
+                                    if (IsSpaceLetterOfInsideTag(tempNextChar))
+                                    {
+                                        // 後続の文字が空白文字であれば、スキップする
+                                        continue;
+
+                                    }
+                                    else if (IsCompletionLetterOfTag(tempNextChar))
+                                    {
+                                        // JavaScriptでも、CSSでも、「<」のあとに「/ ...」と続く文法は考えにくいので閉じタグとして処理する
+                                        modeSkip = false;    // この場合は、以下の処理をスキップせずに実行する
+                                        break; // タグ処理のループを抜ける
+                                    }
+                                    else
+                                    {
+                                        // それ以外の文字なら、確実にJavaScriptコードか、CSSスタイルシートの文字なので、それ以上の処理は不要
+                                        break; // タグ処理のループを抜ける
+                                    }
+                                }
+                                break;
+                        }
+                        if (modeSkip) break; // タグ開始のswitch-caseを抜ける
+
                         if (i + 1 == length)
                         {
                             // 最後がタグ開始で終わってるエラー（例：<）
