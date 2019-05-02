@@ -243,7 +243,7 @@ namespace HtmlValidation
             }
         }
 
-        private static bool IsAllowedToken(char ch)
+        private static bool IsAllowedTagTermToken(char ch)
         {
             switch (ch)
             {
@@ -257,6 +257,19 @@ namespace HtmlValidation
             }
         }
 
+        private static bool IsAllowedAttrNameToken(char ch)
+        {
+            switch (ch)
+            {
+                case '-':
+                case '_':
+                case ':':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static bool IsFirstLetterTagTerm(char ch)
         {
             return (IsAlphabet(ch));
@@ -264,17 +277,17 @@ namespace HtmlValidation
 
         private static bool IsNextLetterTagTerm(char ch)
         {
-            return (IsAlphabet(ch) || IsNumber(ch) || IsAllowedToken(ch));
+            return (IsAlphabet(ch) || IsNumber(ch) || IsAllowedTagTermToken(ch));
         }
 
         private static bool IsFirstLetterAttrName(char ch)
         {
-            return (IsAlphabet(ch));
+            return (IsAlphabet(ch) || IsAllowedTagTermToken(ch));
         }
 
         private static bool IsNextLetterAttrName(char ch)
         {
-            return (IsAlphabet(ch) || IsNumber(ch) || IsAllowedToken(ch));
+            return (IsAlphabet(ch) || IsNumber(ch) || IsAllowedTagTermToken(ch));
         }
 
         private static void AddToErrorInfo(StringBuilder sbErrorInfo, int currentLineNumber, int currentColumnNumber, string errorTitle, string errorMessage, string errorHtmlCode)
@@ -912,6 +925,40 @@ namespace HtmlValidation
 
                             }
 
+                        }
+                        break;
+
+                    // <script>タグと<style>タグの文字列部分はスキップ
+                    case '"':
+                    case '\'':
+                        switch (curTagName)
+                        {
+                            case "script":          // <script>タグ内か（内部では「<」を処理しないため）
+                            case "style":           // <style>タグ内か（内部では「<」を処理しないため）
+                                // JavaScriptコードやCSSスタイルシートの中でも`"文字列"`や`'文字列'`のような形で「</script>」のように書けるので、文字列中は無視する
+                                var tempCurrentChar = curChar;
+                                var tempNextChar = curChar;
+                                // タグ処理のループ
+                                for (int n = i + 1; n < length; n++)
+                                {
+                                    // その次のインデックスにある文字を取得
+                                    tempNextChar = htmlCode[n];
+
+                                    if ((tempNextChar == curChar) && (tempCurrentChar != '\\')) // 「\"」「\'」といったエスケープを除く
+                                    {
+                                        // 引用符の閉じが来たら、スキップを確定する
+                                        i = n;                     // 処理を最後の文字「"」「'」まで進める
+                                        curChar = tempNextChar;    // 現在の文字を念のため再設定。その次の文字は、次のループで処理する
+                                        break;  // タグ処理のループを抜ける
+                                    }
+                                    else
+                                    {
+                                        // それ以外の文字なら、確実にJavaScriptコードか、CSSスタイルシートの文字なので、それ以上の処理は不要
+                                        tempCurrentChar = tempNextChar;
+                                        continue;
+                                    }
+                                }
+                                break;
                         }
                         break;
 
