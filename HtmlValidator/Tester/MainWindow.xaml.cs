@@ -29,6 +29,16 @@ namespace HtmlValidator
                 return;
             }
 
+            try
+            {
+                File.WriteAllText(_pathHtmlSource, html, System.Text.Encoding.UTF8);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("HTMLソースのファイル作成に失敗しました。");
+                return;
+            }
+
             var val = new HtmlValidation.HtmlValidator(_urlHtmlSource, _pathHtmlSource);
             if (val.ValidationOfHtmlText(html, _pathErrorWebPage, _urlErrorWebPage))
             {

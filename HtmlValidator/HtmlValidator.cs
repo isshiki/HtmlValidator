@@ -978,7 +978,6 @@ namespace HtmlValidation
                 try
                 {
                     File.WriteAllText(errorsFilePath, sbErrorInfo.ToString(), Encoding.UTF8);
-                    File.WriteAllText(this.Path, input, Encoding.UTF8);
                 }
                 catch (Exception)
                 {
